@@ -22,7 +22,7 @@ func (w *GoByteWriter) Write(p []byte) (n int, err error) {
 			}
 		}
 
-		w.w.Write([]byte(fmt.Sprintf("0x%X, ", b)))
+		w.w.Write([]byte(fmt.Sprintf("%d, ", b)))
 		if err != nil {
 			return i, err
 		}
