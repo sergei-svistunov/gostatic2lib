@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var pkgName = flag.String("package", "static", "Package name")
@@ -27,6 +28,24 @@ func main() {
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)
+	}
+
+	outFileInfo, err := os.Stat(*outFile)
+	if err == nil {
+		maxUpdateTime := time.Time{}
+		if err := filepath.Walk(absStaticPath, func(path string, f os.FileInfo, err error) error {
+			if f.ModTime().After(maxUpdateTime) {
+				maxUpdateTime = f.ModTime()
+			}
+			return nil
+		}); err != nil {
+			fmt.Print(err)
+			os.Exit(1)
+		}
+
+		if outFileInfo.ModTime().After(maxUpdateTime) {
+			os.Exit(0)
+		}
 	}
 
 	content := &bytes.Buffer{}
