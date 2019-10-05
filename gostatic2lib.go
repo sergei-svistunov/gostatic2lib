@@ -104,6 +104,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := os.MkdirAll(filepath.Dir(*outFile), 0777); err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
+
 	of, err := os.Create(*outFile)
 	defer of.Close()
 	if err != nil {

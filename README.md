@@ -11,7 +11,7 @@ handler that stores static files in execution file.
 
 ## Usage
 
-`gostatic2lib <opts>`
+`gostatic2lib -path <...> -package <...> -out <...>`
 
 ## How does it work
 
