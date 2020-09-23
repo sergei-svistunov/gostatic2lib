@@ -80,11 +80,11 @@ func main() {
 
 		content.WriteString("\"")
 		content.WriteString(fileName)
-		content.WriteString("\": file{\n")
-		content.WriteString("contentType: `" + mime.TypeByExtension(fileName[strings.LastIndex(fileName, "."):]) + "`,\n")
+		content.WriteString("\": {\n")
+		content.WriteString("ContentType: `" + mime.TypeByExtension(fileName[strings.LastIndex(fileName, "."):]) + "`,\n")
 		hs := md5.Sum(buf.Bytes())
-		content.WriteString("etag: \"" + hex.EncodeToString(hs[:8]) + "\",\n")
-		content.WriteString("data: []byte{")
+		content.WriteString("ETag: \"" + hex.EncodeToString(hs[:8]) + "\",\n")
+		content.WriteString("Data: []byte{")
 		content.Write(buf.Bytes())
 		content.WriteString("\n},\n},\n")
 
@@ -130,21 +130,30 @@ import (
 )
 
 type HTTPHandler struct {
-	files map[string]file
+	files map[string]File
 }
 
-type file struct {
-	contentType string
-	etag string
-	data []byte
+type File struct {
+	ContentType string
+	ETag string
+	Data []byte
 }
 
 func NewHTTPHandler() *HTTPHandler {
 	return &HTTPHandler{
-		files: map[string]file{
+		files: map[string]File{
 			>>>FILES<<<
 		},
 	}
+}
+
+func (h *HTTPHandler) GetFile(fileName string) *File {
+	File, exists := h.files[fileName]
+	if !exists || strings.LastIndex(fileName, ".") < 1 {
+		return nil
+	}
+
+	return &File
 }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -153,21 +162,21 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fileName = "/index.html"
 	}
 
-	file, exists := h.files[fileName]
-	if !exists || strings.LastIndex(fileName, ".") < 1 {
+	file := h.GetFile(fileName)
+	if file == nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
-	if r.Header.Get("If-None-Match") == file.etag {
+	if r.Header.Get("If-None-Match") == file.ETag {
 		http.Error(w, http.StatusText(http.StatusNotModified), http.StatusNotModified)
 		return
 	}
 
-	w.Header().Set("Content-Type", file.contentType)
+	w.Header().Set("Content-Type", file.ContentType)
 	w.Header().Set("Content-Encoding", "gzip")
-	w.Header().Set("ETag", file.etag)
+	w.Header().Set("ETag", file.ETag)
 
-	w.Write(file.data)
+	_, _ = w.Write(file.Data)
 }
 `)
